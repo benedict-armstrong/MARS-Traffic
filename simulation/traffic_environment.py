@@ -796,39 +796,7 @@ class CarRacing(gym.Env, EzPickle):
 
 
 if __name__ == "__main__":
-    a = np.array([0.0, 0.0, 0.0])
-
-    def register_input():
-        global quit, restart
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    a[0] = -1.0
-                if event.key == pygame.K_RIGHT:
-                    a[0] = +1.0
-                if event.key == pygame.K_UP:
-                    a[1] = +1.0
-                if event.key == pygame.K_DOWN:
-                    a[2] = +0.8  # set 1.0 for wheels to block to zero rotation
-                if event.key == pygame.K_RETURN:
-                    restart = True
-                if event.key == pygame.K_ESCAPE:
-                    quit = True
-
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT:
-                    a[0] = 0
-                if event.key == pygame.K_RIGHT:
-                    a[0] = 0
-                if event.key == pygame.K_UP:
-                    a[1] = 0
-                if event.key == pygame.K_DOWN:
-                    a[2] = 0
-
-            if event.type == pygame.QUIT:
-                quit = True
-
-    env = CarRacing(render_mode="human")
+    env = CarRacing()
 
     quit = False
     while not quit:
@@ -837,7 +805,7 @@ if __name__ == "__main__":
         steps = 0
         restart = False
         while True:
-            register_input()
+            a = env.action_space.sample()
             s, r, terminated, truncated, info = env.step(a)
             total_reward += r
             if steps % 200 == 0 or terminated or truncated:
@@ -851,6 +819,17 @@ if __name__ == "__main__":
 
 from pettingzoo.test import parallel_api_test
 
-if __name__ == "__main__":
-    env = CarRacing()
-    parallel_api_test(env, num_cycles=1_000_000)
+# if __name__ == "__main__":
+#     env = CarRacing(render_mode="human")
+#     # parallel_api_test(env, num_cycles=1_000_000)
+
+#     observation, info = env.reset()
+
+#     for _ in range(1000):
+#         action = env.action_space.sample()  # agent policy that uses the observation and info
+#         observation, reward, terminated, truncated, info = env.step(action)
+
+#         if terminated or truncated:
+#             observation, info = env.reset()
+
+#     env.close()
