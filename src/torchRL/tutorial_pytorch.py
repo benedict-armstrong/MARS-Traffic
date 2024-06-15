@@ -100,6 +100,9 @@ Key learnings:
 #
 # Import our dependencies:
 #
+import os
+from torchrl.envs import GymWrapper
+from torchrl.envs import GymEnv, TransformedEnv, VecNorm
 import copy
 import tempfile
 
@@ -265,7 +268,16 @@ else:
         num_landmarks=n_obstacles,
     )
 
-base_env = gym.make('highway-v0', render_mode='rgb_array')
+# Create the highway environment
+env = gym.make("intersection-v0")
+
+# Wrap the environment using TorchRL's GymEnv
+wrapped_env = GymWrapper(env)
+
+# Optionally, you can apply transformations such as normalization
+wrapped_env = VecNorm(wrapped_env)
+
+base_env = wrapped_env
 
 ######################################################################
 # Group map
@@ -275,7 +287,7 @@ base_env = gym.make('highway-v0', render_mode='rgb_array')
 # We can access the group map, mapping each group to the agents in it, as follows:
 #
 
-print(f"group_map: {base_env.group_map}")
+# print(f"group_map: {base_env.group_map}")
 
 ######################################################################
 # as we can see it contains 2 groups: "agents" (evaders) and "adversaries" (chasers).
@@ -891,30 +903,33 @@ plt.show()
 
 if use_vmas and not is_sphinx:
     # Replace tmpdir with any desired path where the video should be saved
-    with tempfile.TemporaryDirectory() as tmpdir:
-        video_logger = CSVLogger("vmas_logs", tmpdir, video_format="mp4")
-        print("Creating rendering env")
-        env_with_render = TransformedEnv(env.base_env, env.transform.clone())
-        env_with_render = env_with_render.append_transform(
-            PixelRenderTransform(
-                out_keys=["pixels"],
-                # the np.ndarray has a negative stride and needs to be copied before being cast to a tensor
-                preproc=lambda x: x.copy(),
-                as_non_tensor=True,
-                # asking for array rather than on-screen rendering
-                mode="rgb_array",
-            )
+
+    if not os.path.exists("out/"):
+        os.makedirs("out/")
+
+    video_logger = CSVLogger("vmas_logs", "out/", video_format="mp4")
+    print("Creating rendering env")
+    env_with_render = TransformedEnv(env.base_env, env.transform.clone())
+    env_with_render = env_with_render.append_transform(
+        PixelRenderTransform(
+            out_keys=["pixels"],
+            # the np.ndarray has a negative stride and needs to be copied before being cast to a tensor
+            preproc=lambda x: x.copy(),
+            as_non_tensor=True,
+            # asking for array rather than on-screen rendering
+            mode="rgb_array",
         )
-        env_with_render = env_with_render.append_transform(
-            VideoRecorder(logger=video_logger, tag="vmas_rendered")
-        )
-        with set_exploration_type(ExplorationType.MODE):
-            print("Rendering rollout...")
-            env_with_render.rollout(100, policy=agents_exploration_policy)
-        print("Saving the video...")
-        env_with_render.transform.dump()
-        print("Saved! Saved directory tree:")
-        video_logger.print_log_dir()
+    )
+    env_with_render = env_with_render.append_transform(
+        VideoRecorder(logger=video_logger, tag="vmas_rendered")
+    )
+    with set_exploration_type(ExplorationType.MODE):
+        print("Rendering rollout...")
+        env_with_render.rollout(100, policy=agents_exploration_policy)
+    print("Saving the video...")
+    env_with_render.transform.dump()
+    print("Saved! Saved directory tree:")
+    video_logger.print_log_dir()
 
 
 ######################################################################
