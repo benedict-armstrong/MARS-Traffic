@@ -9,6 +9,11 @@ env.configure({
 
 })
 
+action = env.action_space.sample()
+print(action)
+
+print(env.observation_space)
+
 env.reset()
 done = False
 env.render()

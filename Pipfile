@@ -18,6 +18,7 @@ pyav = "*"
 highway-env = "*"
 gymnasium = "*"
 av = "*"
+seaborn = "*"
 
 [dev-packages]
 ipykernel = "*"
